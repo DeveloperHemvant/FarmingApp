@@ -1,47 +1,56 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Theme } from '../themes/theme';
+import { useLanguage } from '../src/contexts/LanguageContext';
 
-const languages = ['English', 'Hindi', 'Tamil', 'Bengali'];
+const LanguageSelector = () => {
+  const { language, setLanguage, t } = useLanguage();
 
-export default function LanguageSelector({ selected, onSelect }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Select Language:</Text>
-      <View style={styles.options}>
-        {languages.map((lang) => (
-          <TouchableOpacity
-            key={lang}
-            style={[
-              styles.option,
-              selected === lang && styles.optionSelected,
-            ]}
-            onPress={() => onSelect(lang)}
-          >
-            <Text style={selected === lang ? styles.textSelected : styles.text}>
-              {lang}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TouchableOpacity
+        style={[
+          styles.languageButton,
+          language === 'English' && styles.selectedLanguage
+        ]}
+        onPress={() => setLanguage('English')}
+      >
+        <Text style={styles.languageText}>English</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.languageButton,
+          language === 'Hindi' && styles.selectedLanguage
+        ]}
+        onPress={() => setLanguage('Hindi')}
+      >
+        <Text style={styles.languageText}>हिंदी</Text>
+      </TouchableOpacity>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 16 },
-  label: { fontWeight: 'bold', fontSize: 16, marginBottom: 8 },
-  options: { flexDirection: 'row', flexWrap: 'wrap' },
-  option: {
-    padding: 10,
-    margin: 5,
-    borderWidth: 1,
-    borderColor: '#888',
-    borderRadius: 8,
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: Theme.spacing.md,
   },
-  optionSelected: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+  languageButton: {
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    marginHorizontal: Theme.spacing.xs,
+    borderRadius: Theme.borders.radius.sm,
+    borderWidth: Theme.borders.width.thin,
+    borderColor: Theme.colors.border,
   },
-  text: { color: '#333' },
-  textSelected: { color: '#fff' },
+  selectedLanguage: {
+    backgroundColor: Theme.colors.primaryLight,
+    borderColor: Theme.colors.primary,
+  },
+  languageText: {
+    fontSize: Theme.typography.bodyMedium.fontSize,
+  },
 });
+
+export default LanguageSelector;

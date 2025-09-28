@@ -1,389 +1,255 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
-import LanguageSelector from '../components/LanguageSelector';
-import RoleSelector from '../components/RoleSelector';
-import Toast from 'react-native-toast-message';
-import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Theme } from '../themes/theme'; // Import the Theme
+import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// Bilingual text content
+const translations = {
+  en: {
+    appName: 'KrishiGPT',
+    subtitle: 'AI-Powered Agriculture Revolution',
+    language: 'Language',
+    mobileNumber: 'Mobile Number',
+    mobilePlaceholder: '+91 98765 43210',
+    password: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    sendLogin: 'Login',
+    footerText: 'By continuing, you agree to our',
+    terms: 'Terms',
+    and: 'and',
+    privacy: 'Privacy Policy',
+    forgotPassword: 'Forgot Password?',
+    errors: {
+      mobile: 'Mobile number must be at least 10 digits',
+      password: 'Password must be at least 8 characters, include 1 capital, 1 number & 1 special character',
+    },
+  },
+  hi: {
+    appName: 'KrishiGPT',
+    subtitle: 'कृषि के लिए एआई सहायक',
+    language: 'भाषा',
+    mobileNumber: 'मोबाइल नंबर',
+    mobilePlaceholder: '+91 98765 43210',
+    password: 'पासवर्ड',
+    passwordPlaceholder: 'अपना पासवर्ड दर्ज करें',
+    sendLogin: 'लॉगिन करें',
+    footerText: 'जारी रखकर, आप हमारी',
+    terms: 'नियम',
+    and: 'और',
+    privacy: 'गोपनीयता नीति',
+    forgotPassword: 'पासवर्ड भूल गए?',
+    errors: {
+      mobile: 'मोबाइल नंबर कम से कम 10 अंक का होना चाहिए',
+      password: 'पासवर्ड कम से कम 8 वर्ण, 1 बड़ा अक्षर, 1 संख्या और 1 विशेष वर्ण होना चाहिए',
+    },
+  },
+};
 
-export default function LoginScreen({ navigation }: { navigation: any }) {
-  const [language, setLanguage] = useState<string>('English');
-  const [role, setRole] = useState<string>('Farmer');
-  const [mobile, setMobile] = useState<string>('');
-  const [location, setLocation] = useState<string>('');
-  const [otpModalVisible, setOtpModalVisible] = useState<boolean>(false);
-  const [otp, setOtp] = useState<string[]>(['', '', '', '']);
-  const otpInputs = useRef<Array<TextInput | null>>([]);
+export default function KrishiGPTLogin() {
+  const navigation = useNavigation();
+  const [language, setLanguage] = useState('en');
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMobile, setErrorMobile] = useState('');
+  const [errorPassword, setErrorPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const loadLocation = async () => {
-      try {
-        await AsyncStorage.removeItem('userLocation');
-    
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          Toast.show({
-            type: 'error',
-            text1: 'Permission to access location was denied',
-            position: 'bottom',
-          });
-          return;
-        }
-    
-        let loc = await Location.getCurrentPositionAsync({});
-        let geocode = await Location.reverseGeocodeAsync(loc.coords);
-    
-        if (geocode && geocode.length > 0) {
-          const place = geocode[0];
-          console.log('Geocode:', place);
-          const placeName = `${place.formattedAddress}`;
-          setLocation(placeName.trim());
-          await AsyncStorage.setItem('userLocation', placeName.trim());
-        } else {
-          throw new Error('Could not fetch location name.');
-        }
-      } catch (error: any) {
-        Toast.show({
-          type: 'error',
-          text1: 'Error detecting location',
-          position: 'bottom',
-        });
-      }
-    };
-    
-    loadLocation();
-  }, []);
+  const t = translations[language];
 
-  const showToast = (type: string, message: string) => {
-    Toast.show({
-      type: type,
-      text1: message,
-      position: 'bottom',
-    });
+  const handleLanguageToggle = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en');
+    setErrorMobile('');
+    setErrorPassword('');
   };
 
-  const handleSendOtp = async () => {
-    if (!mobile) {
-      showToast('error', 'Please enter a valid mobile number.');
-      return;
+  // Validation
+  const validate = () => {
+    let valid = true;
+
+    // Mobile validation
+    if (mobile.length < 10) {
+      setErrorMobile(t.errors.mobile);
+      valid = false;
+    } else {
+      setErrorMobile('');
     }
-  
+
+    // Password validation
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setErrorPassword(t.errors.password);
+      valid = false;
+    } else {
+      setErrorPassword('');
+    }
+
+    return valid;
+  };
+
+  // Login API call
+  const handleLogin = async () => {
+    if (!validate()) return;
+
+    setLoading(true);
     try {
-      showToast('success', 'OTP sent successfully!');
-      setOtpModalVisible(true);
-      // Auto-focus the first OTP input when modal opens
-      setTimeout(() => otpInputs.current[0]?.focus(), 100);
-    } catch (error: any) {
-      showToast('error', error.message || 'Network error. Please try again.');
-    }
-  };
+      await AsyncStorage.setItem("isLoggedIn", "true");
+      navigation.navigate('Home');
 
-  const handleVerifyOtp = async () => {
-    const enteredOtp = otp.join('');
-    if (enteredOtp.length !== 4) {
-      showToast('error', 'Please enter the complete OTP.');
-      return;
-    }
-    showToast('success', 'OTP verified successfully!');
-    setOtpModalVisible(false);
-    navigation.navigate('Home');
-  };
+      const response = await axios.post('https://your-api.com/login', {
+        mobile,
+        password,
+      });
 
-  const handleOtpChange = (text: string, index: number) => {
-    // Only allow numbers
-    const numericValue = text.replace(/[^0-9]/g, '');
-    
-    // Update OTP array
-    const newOtp = [...otp];
-    newOtp[index] = numericValue;
-    setOtp(newOtp);
-    
-    // Auto focus next input if a number was entered
-    if (numericValue && index < 3) {
-      otpInputs.current[index + 1]?.focus();
-    }
-    
-    // Submit automatically if last digit is entered
-    if (index === 3 && numericValue) {
-      handleVerifyOtp();
-    }
-  };
+      // Assuming API returns { success: true, token: '...' }
+      if (response.data.success) {
+        Alert.alert('Success', 'Login successful!');
 
-  const handleKeyPress = (e: any, index: number) => {
-    // Handle backspace to move to previous input
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      otpInputs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleLocationDetect = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        showToast('error', 'Permission to access location was denied');
-        return;
+        // Navigate to Home screen
+        navigation.navigate('Home');
+      } else {
+        Alert.alert('Error', response.data.message || 'Login failed');
       }
-      let loc = await Location.getCurrentPositionAsync({});
-      const locString = `Lat: ${loc.coords.latitude.toFixed(4)}, Lon: ${loc.coords.longitude.toFixed(4)}`;
-      setLocation(locString);
-      await AsyncStorage.setItem('userLocation', locString);
-      showToast('success', 'Location detected and saved');
     } catch (error) {
-      showToast('error', 'Error detecting location');
+      console.log(error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    // Navigate to Forgot Password screen
+    navigation.navigate('ForgotPassword');
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: Theme.colors.background }]}>
-      <Image source={{ uri: 'https://example.com/farming-logo.png' }} style={styles.logo} />
-      <Text style={styles.title}>🌾 Smart Farming App</Text>
-
-      <LanguageSelector selected={language} onSelect={setLanguage} />
-      <RoleSelector selected={role} onSelect={setRole} style={styles.roleSelector} />
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Enter Mobile Number:</Text>
-        <TextInput
-          style={[styles.input, { borderColor: Theme.colors.border }]}
-          placeholder="e.g. 9876543210"
-          keyboardType="phone-pad"
-          value={mobile}
-          onChangeText={setMobile}
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Location:</Text>
-        <TextInput
-          style={[styles.input, { borderColor: Theme.colors.border }]}
-          placeholder="Enter manually or use GPS"
-          value={location}
-          onChangeText={setLocation}
-        />
-        <TouchableOpacity onPress={handleLocationDetect}>
-          <Text style={[styles.detectLink, { color: Theme.colors.primary }]}>📍 Detect via GPS</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={[styles.loginBtn, { backgroundColor: Theme.colors.primary }]} onPress={handleSendOtp}>
-        <Text style={styles.loginText}>Send OTP</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.or}>OR</Text>
-
-      <View style={styles.social}>
-        <TouchableOpacity style={[styles.socialBtn, { backgroundColor: Theme.colors.primaryLight }]}>
-          <Text style={styles.socialText}>🔵 Login with Facebook</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.socialBtn, { backgroundColor: Theme.colors.primaryLight }]}>
-          <Text style={styles.socialText}>🔴 Login with Google</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* OTP Modal */}
-      <Modal
-        visible={otpModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setOtpModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity 
-              style={styles.closeIcon} 
-              onPress={() => {
-                setOtpModalVisible(false);
-                setOtp(['', '', '', '']);
-              }}
-            >
-              <Ionicons name="close" size={24} color={Theme.colors.primary} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+      <LinearGradient colors={['#f0fdf4', '#dcfce7', '#bbf7d0']} style={styles.backgroundGradient}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.languageToggle} onPress={handleLanguageToggle} activeOpacity={0.7}>
+              <Ionicons name="language" size={20} color="#059669" />
+              <Text style={styles.languageText}>{language === 'en' ? 'हिं' : 'EN'}</Text>
             </TouchableOpacity>
 
-            <Text style={[styles.modalTitle, { color: Theme.colors.primary }]}>Enter OTP</Text>
-            <Text style={styles.modalSubtitle}>We've sent a verification code to {mobile}</Text>
-            
-            <View style={styles.otpContainer}>
-              {otp.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={(ref) => {
-                    otpInputs.current[index] = ref;
-                  }}
-                  style={[styles.otpInput, { borderColor: Theme.colors.border }]}
-                  keyboardType="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChangeText={(text) => handleOtpChange(text, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
-                  autoFocus={index === 0}
-                  selectionColor={Theme.colors.primaryLight}
-                />
-              ))}
+            <View style={styles.logoContainer}>
+              <LinearGradient colors={['#059669', '#10b981']} style={styles.logoGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Text style={styles.logoEmoji}>🌱</Text>
+                <Ionicons name="flash" size={24} color="white" />
+              </LinearGradient>
             </View>
 
-            <TouchableOpacity style={styles.resendLink}>
-              <Text style={[styles.resendText, { color: Theme.colors.textSecondary }]}>Didn't receive code? <Text style={[styles.resendHighlight, { color: Theme.colors.primary }]}>Resend</Text></Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.verifyBtn, { backgroundColor: Theme.colors.primary }]} onPress={handleVerifyOtp}>
-              <Text style={styles.verifyText}>Verify OTP</Text>
-            </TouchableOpacity>
+            <Text style={styles.appName}>{t.appName}</Text>
+            <Text style={styles.subtitle}>{t.subtitle}</Text>
           </View>
-        </View>
-      </Modal>
 
-      <Toast />
-    </View>
+          {/* Form */}
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t.mobileNumber}</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="call" size={20} color="#059669" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={mobile}
+                  onChangeText={setMobile}
+                  placeholder={t.mobilePlaceholder}
+                  placeholderTextColor="#9ca3af"
+                  keyboardType="phone-pad"
+                  maxLength={13}
+                />
+              </View>
+              {errorMobile ? <Text style={styles.errorText}>{errorMobile}</Text> : null}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t.password}</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed" size={20} color="#059669" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={t.passwordPlaceholder}
+                  placeholderTextColor="#9ca3af"
+                  secureTextEntry
+                />
+              </View>
+              {errorPassword ? <Text style={styles.errorText}>{errorPassword}</Text> : null}
+            </View>
+
+            <TouchableOpacity style={{ alignSelf: 'flex-end', marginBottom: 20 }} onPress={handleForgotPassword} activeOpacity={0.7}>
+              <Text style={{ color: '#059669', fontWeight: '600' }}>{t.forgotPassword}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.sendOtpButton} onPress={handleLogin} activeOpacity={0.8}>
+              <LinearGradient colors={['#059669', '#10b981', '#34d399']} style={styles.buttonGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                <Text style={styles.buttonText}>{loading ? 'Loading...' : t.sendLogin}</Text>
+                <Ionicons name="arrow-forward" size={20} color="white" />
+              </LinearGradient>
+            </TouchableOpacity>
+            <View style={{ alignItems: 'center', marginVertical: 15 }}>
+              <Text style={{ fontSize: 14, color: '#374151' }}>
+                Don’t have an account?
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: '#059669', fontWeight: '700', fontSize: 16 }}>
+                  Register as Farmer
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>
+                {t.footerText} <Text style={styles.linkText}>{t.terms}</Text> {t.and} <Text style={styles.linkText}>{t.privacy}</Text>
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: Theme.spacing.md,
-    justifyContent: 'center',
-  },
-  logo: {
-    alignSelf: 'center',
-    width: 150,
-    height: 150,
-    marginBottom: Theme.spacing.lg,
-    resizeMode: 'contain',
-  },
-  title: {
-    fontSize: Theme.typography.heading1.fontSize,
-    fontWeight: Theme.typography.heading1.fontWeight,
-    textAlign: 'center',
-    marginBottom: Theme.spacing.xl,
-    color: Theme.colors.primary,
-  },
-  roleSelector: {
-    backgroundColor: Theme.colors.secondary, // Change the background color for the Role Selector
-    padding: Theme.spacing.sm,
-    borderRadius: Theme.borders.radius.sm,
-    marginBottom: Theme.spacing.sm,
-  },
-  inputContainer: {
-    marginBottom: Theme.spacing.sm,
-  },
-  label: {
-    marginTop: Theme.spacing.xs,
-    fontWeight: '600',
-    color: Theme.colors.primary,
-    fontSize: Theme.typography.bodyMedium.fontSize,
-    marginBottom: Theme.spacing.xs,
-  },
-  input: {
-    borderWidth: Theme.borders.width.thin,
-    borderRadius: Theme.borders.radius.sm,
-    padding: Theme.spacing.sm,
-    backgroundColor: Theme.colors.white,
-    fontSize: Theme.typography.bodyMedium.fontSize,
-  },
-  detectLink: {
-    textAlign: 'right',
-    marginTop: Theme.spacing.xs,
-    fontWeight: '600',
-    fontSize: Theme.typography.bodySmall.fontSize,
-  },
-  loginBtn: {
-    padding: Theme.spacing.lg,
-    borderRadius: Theme.borders.radius.sm,
-    marginVertical: Theme.spacing.md,
-    alignItems: 'center',
-  },
-  loginText: {
-    color: Theme.colors.white,
-    fontWeight: 'bold',
-    fontSize: Theme.typography.bodyMedium.fontSize,
-  },
-  or: {
-    textAlign: 'center',
-    marginVertical: Theme.spacing.md,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    fontSize: Theme.typography.bodySmall.fontSize,
-  },
-  social: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  socialBtn: {
-    padding: Theme.spacing.sm,
-    borderRadius: Theme.borders.radius.sm,
-    flex: 1,
-    marginHorizontal: Theme.spacing.xs,
-    alignItems: 'center',
-  },
-  socialText: {
-    color: Theme.colors.white,
-    fontSize: Theme.typography.bodySmall.fontSize,
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Theme.colors.overlay,
-  },
-  modalContent: {
-    backgroundColor: Theme.colors.white,
-    padding: Theme.spacing.lg,
-    borderRadius: Theme.borders.radius.lg,
-    width: '80%',
-    alignItems: 'center',
-  },
-  closeIcon: {
-    position: 'absolute',
-    top: Theme.spacing.sm,
-    right: Theme.spacing.sm,
-  },
-  modalTitle: {
-    fontSize: Theme.typography.heading2.fontSize,
-    fontWeight: Theme.typography.heading2.fontWeight,
-    marginBottom: Theme.spacing.sm,
-  },
-  modalSubtitle: {
-    fontSize: Theme.typography.bodySmall.fontSize,
-    textAlign: 'center',
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.spacing.md,
-  },
-  otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: Theme.spacing.md,
-  },
-  otpInput: {
-    width: 50,
-    height: 50,
-    textAlign: 'center',
-    fontSize: Theme.typography.bodyLarge.fontSize,
-    borderWidth: Theme.borders.width.thin,
-    borderRadius: Theme.borders.radius.sm,
-    marginHorizontal: Theme.spacing.xs,
-  },
-  resendLink: {
-    marginBottom: Theme.spacing.md,
-  },
-  resendText: {
-    fontSize: Theme.typography.bodySmall.fontSize,
-  },
-  resendHighlight: {
-    fontWeight: 'bold',
-  },
-  verifyBtn: {
-    paddingVertical: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg,
-    borderRadius: Theme.borders.radius.sm,
-    marginTop: Theme.spacing.sm,
-    alignItems: 'center',
-  },
-  verifyText: {
-    color: Theme.colors.white,
-    fontWeight: 'bold',
-    fontSize: Theme.typography.bodyMedium.fontSize,
-  },
+  container: { flex: 1, backgroundColor: '#f0fdf4' },
+  backgroundGradient: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20 },
+  header: { alignItems: 'center', paddingTop: 40, paddingBottom: 30 },
+  languageToggle: { position: 'absolute', top: 10, right: 0, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.8)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  languageText: { marginLeft: 4, color: '#059669', fontWeight: '600', fontSize: 14 },
+  logoContainer: { marginBottom: 20 },
+  logoGradient: { width: 80, height: 80, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  logoEmoji: { fontSize: 28, marginRight: 4 },
+  appName: { fontSize: 42, fontWeight: 'bold', color: '#065f46', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 18, color: '#047857', textAlign: 'center', fontWeight: '500' },
+  formContainer: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 25, padding: 24 },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 15, borderWidth: 2, borderColor: '#d1fae5', paddingHorizontal: 16, paddingVertical: 4 },
+  inputIcon: { marginRight: 12 },
+  textInput: { flex: 1, fontSize: 16, color: '#374151', paddingVertical: 12 },
+  errorText: { color: 'red', fontSize: 12, marginTop: 4 },
+  sendOtpButton: { borderRadius: 18, elevation: 6 },
+  buttonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 18 },
+  buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold', marginRight: 8 },
+  footer: { alignItems: 'center' },
+  footerText: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
+  linkText: { color: '#059669', fontWeight: '600' },
 });

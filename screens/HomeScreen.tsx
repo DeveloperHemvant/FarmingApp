@@ -1,366 +1,543 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  Image,
-  TextInput,
-  ActivityIndicator,
-  Animated,
-  Easing
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import * as Location from 'expo-location';
-import LottieView from 'lottie-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+const { width } = Dimensions.get('window');
 
-// Theme imports
-import { Theme } from '../themes/theme';
-import { makeStyles, TextStyles } from '../themes/styles';
+interface WeatherData {
+  temperature: string;
+  humidity: string;
+  condition: string;
+  icon: string;
+}
 
-const API_KEY = 'a658d190c1a510fd7033032174db0e33';
+interface CropData {
+  id: string;
+  name: string;
+  stage: string;
+  icon: string;
+  health: 'good' | 'warning' | 'critical';
+}
 
-// Weather animations from LottieFiles
-const WEATHER_ANIMATIONS = {
-  Clear: 'https://assets5.lottiefiles.com/packages/lf20_6ghycw4h.json',
-  Rain: 'https://assets5.lottiefiles.com/packages/lf20_kcsr6fcp.json',
-  Clouds: 'https://assets5.lottiefiles.com/packages/lf20_1pxqjqps.json',
-  Thunderstorm: 'https://assets5.lottiefiles.com/packages/lf20_hu9cd9.json',
-  Snow: 'https://assets5.lottiefiles.com/packages/lf20_6xfdtjzb.json',
-  Mist: 'https://assets5.lottiefiles.com/packages/lf20_hu9cd9.json',
-  Default: 'https://assets5.lottiefiles.com/packages/lf20_1pxqjqps.json'
-};
+interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success';
+  time: string;
+}
 
-// Farmer's favorite crops data
-const favoriteCrops = [
-  { id: 1, name: 'Wheat', icon: '🌾', diseaseCount: 2 },
-  { id: 2, name: 'Rice', icon: '🍚', diseaseCount: 1 },
-  { id: 3, name: 'Tomato', icon: '🍅', diseaseCount: 3 },
-  { id: 4, name: 'Potato', icon: '🥔', diseaseCount: 0 },
-];
-
-// Essential tools data
-const essentialTools = [
-  { id: 1, title: 'Disease Scan', icon: 'camera', screen: 'DiseaseDetection', color: Theme.colors.accent },
-  { id: 2, title: 'Ask Agri AI', icon: 'robot', screen: 'AskAI', color: Theme.colors.info },
-];
-
-// Dashboard categories data
-const farmingCategories = [
-  { id: 1, title: 'Vedic Farming', icon: 'om', screen: 'VedicGuide' },
-  { id: 2, title: 'Fertilizers', icon: 'flask', screen: 'Fertilizer' },
-  { id: 3, title: 'Crop Guide', icon: 'seedling', screen: 'CropGuide' },
-  { id: 4, title: 'Market Prices', icon: 'chart-line', screen: 'MarketPrices' },
-  { id: 5, title: 'Soil Health', icon: 'leaf', screen: 'SoilInfo' },
-  { id: 6, title: 'Irrigation', icon: 'tint', screen: 'Irrigation' },
-];
-
-export default function HomeScreen({ navigation }: { navigation: any }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [weatherData, setWeatherData] = useState<any>(null);
-  const [loadingWeather, setLoadingWeather] = useState(true);
-  const [locationName, setLocationName] = useState('Your Farm');
-  const [locationError, setLocationError] = useState('');
-  const [animationProgress] = useState(new Animated.Value(0));
-
-  // Initialize styles with theme
-  const styles = makeStyles(Theme);
-  const textStyles = TextStyles(Theme);
-
-  // Animation for weather icon
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(animationProgress, {
-        toValue: 1,
-        duration: 5000,
-        easing: Easing.linear,
-        useNativeDriver: true
-      })
-    ).start();
-  }, []);
-
-  // Fetch weather data
-  useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        // Get permission for location
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setLocationError('Location permission denied');
-          setLoadingWeather(false);
-          return;
-        }
-
-        // Get current location
-        let location = await Location.getCurrentPositionAsync({});
-        const { latitude, longitude } = location.coords;
-
-        // Get location name
-        const geoLocation = await Location.reverseGeocodeAsync({ latitude, longitude });
-        if (geoLocation && geoLocation.length > 0) {
-          const place = geoLocation[0];
-          const nameParts = [
-            place.city,
-            place.subregion,
-            place.region,
-            place.country
-          ].filter(Boolean);
-          setLocationName(nameParts.join(', ') || 'Your Farm');
-        }
-
-        // Fetch weather data
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`
-        );
-        
-        if (!response.ok) {
-          throw new Error('Weather data fetch failed');
-        }
-
-        const data = await response.json();
-        setWeatherData(data);
-      } catch (error) {
-        console.error('Error fetching weather:', error);
-        setLocationError('Could not fetch weather data');
-      } finally {
-        setLoadingWeather(false);
-      }
-    };
-
-    fetchWeather();
-  }, []);
-
-  // Extract weather information
-  const weatherCondition = weatherData?.weather?.[0]?.main || 'Clear';
-  const temperature = weatherData?.main?.temp ? Math.round(weatherData.main.temp) : '--';
-  const windSpeed = weatherData?.wind?.speed ? (weatherData.wind.speed * 3.6).toFixed(1) : '--';
-  const humidity = weatherData?.main?.humidity || '--';
-  const rainProbability = weatherData?.rain?.['1h'] ? `${Math.round(weatherData.rain['1h'] * 100)}%` : '0%';
-  const feelsLike = weatherData?.main?.feels_like ? Math.round(weatherData.main.feels_like) : '--';
-
-  // Weather alerts based on conditions
-  const weatherAlerts = [];
-  if (weatherCondition === 'Thunderstorm') {
-    weatherAlerts.push('Thunderstorm warning - secure loose items');
-  }
-  if (parseFloat(windSpeed) > 30) {
-    weatherAlerts.push('High winds expected - protect delicate crops');
-  }
-  if (weatherCondition === 'Rain' && parseFloat(rainProbability) > 50) {
-    weatherAlerts.push('Heavy rain expected - check drainage');
-  }
-  if (parseFloat(temperature) > 35) {
-    weatherAlerts.push('Heat warning - water crops more frequently');
-  }
-  if (parseFloat(temperature) < 5) {
-    weatherAlerts.push('Frost warning - protect sensitive plants');
-  }
-
-  // Get weather animation based on condition
-  const getWeatherAnimation = (condition: string) => {
-    return WEATHER_ANIMATIONS[condition as keyof typeof WEATHER_ANIMATIONS] || WEATHER_ANIMATIONS.Default;
+const HomeScreen: React.FC = () => {
+  const weatherData: WeatherData = {
+    temperature: '28°C',
+    humidity: '65%',
+    condition: 'Partly Cloudy',
+    icon: '⛅',
   };
 
-  // Render weather animation with appropriate style
-  const renderWeatherAnimation = () => {
-    const animationStyle = {
-      transform: [
-        {
-          translateX: animationProgress.interpolate({
-            inputRange: [0, 1],
-            outputRange: weatherCondition === 'Clear' ? [0, 20] : 
-                         weatherCondition === 'Rain' ? [0, -10] : 
-                         weatherCondition === 'Thunderstorm' ? [0, 30] : [0, 0]
-          })
-        }
-      ]
-    };
+  const crops: CropData[] = [
+    { id: '1', name: 'Wheat', stage: 'Flowering', icon: '🌾', health: 'good' },
+    { id: '2', name: 'Corn', stage: 'Growing', icon: '🌽', health: 'good' },
+    { id: '3', name: 'Rice', stage: 'Harvesting', icon: '🌾', health: 'warning' },
+    { id: '4', name: 'Tomato', stage: 'Fruiting', icon: '🍅', health: 'good' },
+  ];
 
-    return (
-      <Animated.View style={[styles.weatherAnimationContainer, animationStyle]}>
-        <LottieView
-          source={{ uri: getWeatherAnimation(weatherCondition) }}
-          autoPlay
-          loop
-          style={styles.weatherAnimation}
-        />
-      </Animated.View>
-    );
+  const notifications: NotificationData[] = [
+    {
+      id: '1',
+      title: 'Weather Alert',
+      message: 'Heavy rain expected tomorrow',
+      type: 'warning',
+      time: '2 hours ago',
+    },
+    {
+      id: '2',
+      title: 'Crop Health',
+      message: 'Rice crop needs attention',
+      type: 'warning',
+      time: '4 hours ago',
+    },
+    {
+      id: '3',
+      title: 'AI Tip',
+      message: 'Best time for wheat harvesting',
+      type: 'info',
+      time: '1 day ago',
+    },
+  ];
+  const navigation = useNavigation();
+  const handleNavigation = (screen: string) => {
+    navigation.navigate(screen as never);
+
   };
 
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
+  const getHealthColor = (health: string) => {
+    switch (health) {
+      case 'good': return '#10b981';
+      case 'warning': return '#f59e0b';
+      case 'critical': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'warning': return '#f59e0b';
+      case 'success': return '#10b981';
+      default: return '#059669';
+    }
   };
 
   return (
-    <View style={styles.container}>
-      {/* Static Header with Search */}
-      <View style={styles.staticHeader}>
-        <View style={styles.headerTextBlock}>
-          <Text style={textStyles.greeting}>Hello Farmer 👋</Text>
-          <Text style={textStyles.subtitle}>Welcome to your farming companion</Text>
-        </View>
-        
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search crops, diseases, solutions..."
-          value={searchQuery}
-          onChangeText={handleSearch}
-          placeholderTextColor={Theme.colors.textTertiary}
-        />
-        
-        {/* Always visible essential tools */}
-        <View style={styles.essentialTools}>
-          {essentialTools.map((tool) => (
-            <TouchableOpacity
-              key={tool.id}
-              style={[styles.essentialToolCard, { backgroundColor: tool.color }]}
-              onPress={() => navigation.navigate(tool.screen)}
-            >
-              <FontAwesome5 name={tool.icon} size={20} color="white" />
-              <Text style={textStyles.essentialToolText}>{tool.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
 
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Enhanced Weather Section */}
-        <View style={styles.weatherContainer}>
-          {loadingWeather ? (
-            <ActivityIndicator size="small" color={Theme.colors.primary} />
-          ) : locationError ? (
-            <View style={styles.center}>
-              <Ionicons name="warning" size={20} color={Theme.colors.dangerLight} />
-              <Text style={textStyles.weatherErrorText}>{locationError}</Text>
+      <LinearGradient
+        colors={['#f0fdf4', '#dcfce7', '#bbf7d0']}
+        style={styles.backgroundGradient}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.welcomeText}>Welcome Back!</Text>
+              <Text style={styles.userNameText}>Farmer Singh</Text>
             </View>
-          ) : (
-            <>
-              {/* Large Weather Animation */}
-              <View style={styles.weatherAnimationWrapper}>
-                {renderWeatherAnimation()}
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => handleNavigation('Notifications')}
+            >
+              <Ionicons name="notifications" size={24} color="#059669" />
+              <View style={styles.notificationBadge}>
+                <Text style={styles.badgeText}>3</Text>
               </View>
+            </TouchableOpacity>
+          </View>
 
-              {/* Weather Details */}
-              <View style={styles.weatherDetailsCard}>
-                <View style={styles.weatherLocationContainer}>
-                  <Ionicons name="location" size={16} color={Theme.colors.primary} />
-                  <Text style={textStyles.weatherLocationText}>{locationName}</Text>
+          {/* Weather Card */}
+          <View style={styles.weatherCard}>
+            <LinearGradient
+              colors={['#059669', '#10b981']}
+              style={styles.weatherGradient}
+            >
+              <View style={styles.weatherHeader}>
+                <Text style={styles.weatherTitle}>Today's Weather</Text>
+                <Text style={styles.weatherIcon}>{weatherData.icon}</Text>
+              </View>
+              <View style={styles.weatherInfo}>
+                <View style={styles.weatherItem}>
+                  <Text style={styles.weatherValue}>{weatherData.temperature}</Text>
+                  <Text style={styles.weatherLabel}>Temperature</Text>
                 </View>
-
-                <View style={styles.weatherInfoContainer}>
-                  <View style={styles.weatherMainInfo}>
-                    <Text style={textStyles.weatherTemp}>{temperature}°</Text>
-                    <Text style={textStyles.weatherCondition}>{weatherCondition}</Text>
-                  </View>
-
-                  <View style={styles.weatherStats}>
-                    <View style={styles.weatherStat}>
-                      <Ionicons name="water-outline" size={16} color={Theme.colors.primary} />
-                      <Text style={textStyles.weatherStatText}>{humidity}%</Text>
-                    </View>
-                    <View style={styles.weatherStat}>
-                      <Ionicons name="speedometer-outline" size={16} color={Theme.colors.primary} />
-                      <Text style={textStyles.weatherStatText}>{windSpeed} km/h</Text>
-                    </View>
-                    <View style={styles.weatherStat}>
-                      <Ionicons name="rainy-outline" size={16} color={Theme.colors.primary} />
-                      <Text style={textStyles.weatherStatText}>{rainProbability}</Text>
-                    </View>
-                  </View>
+                <View style={styles.weatherItem}>
+                  <Text style={styles.weatherValue}>{weatherData.humidity}</Text>
+                  <Text style={styles.weatherLabel}>Humidity</Text>
+                </View>
+                <View style={styles.weatherItem}>
+                  <Text style={styles.weatherValue}>{weatherData.condition}</Text>
+                  <Text style={styles.weatherLabel}>Condition</Text>
                 </View>
               </View>
-            </>
-          )}
-        </View>
+            </LinearGradient>
+          </View>
 
-        {/* Weather Alerts */}
-        {weatherAlerts.length > 0 && (
-          <View style={styles.alertCard}>
-            <Ionicons name="warning" size={24} color={Theme.colors.dangerLight} />
-            <View style={styles.alertTextContainer}>
-              <Text style={textStyles.alertTitle}>Weather Alerts</Text>
-              {weatherAlerts.map((alert, index) => (
-                <Text key={index} style={textStyles.alertText}>• {alert}</Text>
+          {/* Quick Actions */}
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => handleNavigation('CropManagementScreen')}
+            >
+              <View style={styles.actionIcon}>
+                <Text style={styles.actionEmoji}>🌱</Text>
+              </View>
+              <Text style={styles.actionText}>Crop Management</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => handleNavigation('DiseaseAlertsScreen')}
+            >
+              <View style={styles.actionIcon}>
+                <Text style={styles.actionEmoji}>🦠</Text>
+              </View>
+              <Text style={styles.actionText}>Disease Alerts</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => handleNavigation('Weather')}
+            >
+              <View style={styles.actionIcon}>
+                <Text style={styles.actionEmoji}>🌤️</Text>
+              </View>
+              <Text style={styles.actionText}>Weather</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => handleNavigation('AITipsScreen')}
+            >
+              <View style={styles.actionIcon}>
+                <Text style={styles.actionEmoji}>🤖</Text>
+              </View>
+              <Text style={styles.actionText}>AI Tips</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => handleNavigation('CommunityScreen')}
+            >
+              <View style={styles.actionIcon}>
+                <Text style={styles.actionEmoji}>👥</Text>
+              </View>
+              <Text style={styles.actionText}>Community</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => handleNavigation('ProfileScreen')}
+            >
+              <View style={styles.actionIcon}>
+                <Text style={styles.actionEmoji}>👤</Text>
+              </View>
+              <Text style={styles.actionText}>Profile</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* My Crops */}
+          <Text style={styles.sectionTitle}>My Crops</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.cropsContainer}>
+              {crops.map((crop) => (
+                <TouchableOpacity
+                  key={crop.id}
+                  style={styles.cropCard}
+                  onPress={() => handleNavigation('CropDetailScreen')}
+                >
+                  <Text style={styles.cropIcon}>{crop.icon}</Text>
+                  <Text style={styles.cropName}>{crop.name}</Text>
+                  <Text style={styles.cropStage}>{crop.stage}</Text>
+                  <View style={[styles.healthIndicator, { backgroundColor: getHealthColor(crop.health) }]} />
+                </TouchableOpacity>
               ))}
             </View>
-          </View>
-        )}
+          </ScrollView>
 
-        {/* Favorite Crops Section */}
-        <Text style={textStyles.sectionTitle}>Your Favorite Crops</Text>
-        <View style={styles.grid2}>
-          {favoriteCrops.map((crop) => (
-            <TouchableOpacity 
-              key={crop.id} 
-              style={styles.cropCard}
-              onPress={() => navigation.navigate('CropDetails', { cropName: crop.name })}
-            >
-              <Text style={styles.cropIcon}>{crop.icon}</Text>
-              <Text style={textStyles.cropName}>{crop.name}</Text>
-              {crop.diseaseCount > 0 && (
-                <View style={styles.diseaseBadge}>
-                  <Text style={textStyles.diseaseBadgeText}>{crop.diseaseCount} alert{crop.diseaseCount > 1 ? 's' : ''}</Text>
+          {/* Recent Notifications */}
+          <Text style={styles.sectionTitle}>Recent Updates</Text>
+          <View style={styles.notificationsContainer}>
+            {notifications.map((notification) => (
+              <TouchableOpacity
+                key={notification.id}
+                style={styles.notificationCard}
+                onPress={() => handleNavigation('NotificationDetails')}
+              >
+                <View style={[styles.notificationIcon, { backgroundColor: getNotificationColor(notification.type) }]}>
+                  <Ionicons
+                    name={notification.type === 'warning' ? 'warning' : notification.type === 'success' ? 'checkmark' : 'information'}
+                    size={20}
+                    color="white"
+                  />
                 </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Farming Categories */}
-        <Text style={textStyles.sectionTitle}>Farming Solutions</Text>
-        <View style={styles.grid2}>
-          {farmingCategories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={styles.categoryCard}
-              onPress={() => navigation.navigate(category.screen)}
-            >
-              <FontAwesome5 name={category.icon} size={24} color={Theme.colors.primary} />
-              <Text style={textStyles.categoryText}>{category.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Vedic Tip of the Day */}
-        <Text style={textStyles.sectionTitle}>Vedic Wisdom</Text>
-        <View style={styles.vedicCard}>
-          <Image 
-            source={{ uri: 'https://i.ibb.co/6n0hL3V/vedic.png' }} 
-            style={styles.vedicIcon}
-          />
-          <View style={styles.vedicTextContainer}>
-            <Text style={textStyles.vedicTitle}>Today's Planting Tip</Text>
-            <Text style={textStyles.vedicText}>
-              According to Vedic astrology, today is favorable for sowing leafy vegetables 
-              as the moon is in a water sign. Consider using neem-based pest control.
-            </Text>
+                <View style={styles.notificationContent}>
+                  <Text style={styles.notificationTitle}>{notification.title}</Text>
+                  <Text style={styles.notificationMessage}>{notification.message}</Text>
+                  <Text style={styles.notificationTime}>{notification.time}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
 
-        {/* Disease Alert */}
-        <Text style={textStyles.sectionTitle}>Health Alerts</Text>
-        <View style={styles.diseaseAlertCard}>
-          <Image 
-            source={{ uri: 'https://i.ibb.co/4W2yYyJ/alert.png' }} 
-            style={styles.alertIcon}
-          />
-          <View style={styles.alertTextContainer}>
-            <Text style={textStyles.alertTitle}>Wheat Rust Detected</Text>
-            <Text style={textStyles.alertText}>
-              Several cases of wheat stem rust reported in your district. Check your crops 
-              for yellow-orange pustules on stems and leaves.
-            </Text>
-            <TouchableOpacity 
-              style={styles.alertButton}
-              onPress={() => navigation.navigate('DiseaseDetection')}
+          {/* AI Assistant Button */}
+          <TouchableOpacity
+            style={styles.aiAssistantButton}
+            onPress={() => handleNavigation('AIChatScreen')}
+          >
+            <LinearGradient
+              colors={['#059669', '#10b981', '#34d399']}
+              style={styles.aiButtonGradient}
+
             >
-              <Text style={textStyles.alertButtonText}>Scan Your Crops</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+              <Ionicons name="chatbubble-ellipses" size={24} color="white" />
+              <Text style={styles.aiButtonText}>Ask KrishiGPT</Text>
+              <Text style={styles.aiEmoji}>🤖</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f0fdf4',
+  },
+  backgroundGradient: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  userNameText: {
+    fontSize: 24,
+    color: '#065f46',
+    fontWeight: 'bold',
+  },
+  notificationButton: {
+    position: 'relative',
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  weatherCard: {
+    marginBottom: 30,
+    borderRadius: 20,
+    elevation: 6,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  weatherGradient: {
+    padding: 20,
+    borderRadius: 20,
+  },
+  weatherHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  weatherTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  weatherIcon: {
+    fontSize: 24,
+  },
+  weatherInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  weatherItem: {
+    alignItems: 'center',
+  },
+  weatherValue: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  weatherLabel: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    color: '#065f46',
+    fontWeight: 'bold',
+    marginBottom: 15,
+    marginTop: 10,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  actionCard: {
+    width: (width - 60) / 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  actionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#dcfce7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  actionEmoji: {
+    fontSize: 24,
+  },
+  actionText: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  cropsContainer: {
+    flexDirection: 'row',
+    paddingBottom: 10,
+  },
+  cropCard: {
+    width: 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    marginRight: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    position: 'relative',
+  },
+  cropIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  cropName: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  cropStage: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  healthIndicator: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  notificationsContainer: {
+    marginBottom: 30,
+  },
+  notificationCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  notificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  notificationMessage: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  aiAssistantButton: {
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    marginTop: 10,
+  },
+  aiButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 20,
+  },
+  aiButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    marginRight: 8,
+  },
+  aiEmoji: {
+    fontSize: 20,
+  },
+});
+
+export default HomeScreen;

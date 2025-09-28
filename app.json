@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "my-expo-app",
+    "name": "Farming AI App",
     "slug": "my-expo-app",
     "version": "1.0.0",
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/mainlogo.png"
     },
     "experiments": {
       "tsconfigPaths": true
     },
     "plugins": [],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/mainlogo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/mainlogo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F8FDF8"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -27,7 +27,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#F8FDF8"
       },
       "package": "com.hemvant123.myexpoapp"
     },
@@ -35,6 +35,7 @@
       "eas": {
         "projectId": "04c74de2-445d-4712-9151-4379d151f412"
       }
-    }
+    },
+    "owner": "hemvant123"
   }
 }
