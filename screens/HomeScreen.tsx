@@ -12,7 +12,23 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+
 const { width } = Dimensions.get('window');
+
+// Color constants
+const COLORS = {
+  primary: '#066040',
+  secondary: '#cde4cd',
+  white: '#ffffff',
+  black: '#000000',
+  gray: '#6b7280',
+  lightGray: '#9ca3af',
+  darkGray: '#374151',
+  error: '#ef4444',
+  success: '#10b981',
+  lightPrimary: '#08855f',
+  darkPrimary: '#054d34',
+};
 
 interface WeatherData {
   temperature: string;
@@ -38,6 +54,8 @@ interface NotificationData {
 }
 
 const HomeScreen: React.FC = () => {
+  const navigation = useNavigation();
+
   const weatherData: WeatherData = {
     temperature: '28°C',
     humidity: '65%',
@@ -75,10 +93,9 @@ const HomeScreen: React.FC = () => {
       time: '1 day ago',
     },
   ];
-  const navigation = useNavigation();
+
   const handleNavigation = (screen: string) => {
     navigation.navigate(screen as never);
-
   };
 
   const getHealthColor = (health: string) => {
@@ -94,16 +111,16 @@ const HomeScreen: React.FC = () => {
     switch (type) {
       case 'warning': return '#f59e0b';
       case 'success': return '#10b981';
-      default: return '#059669';
+      default: return COLORS.primary;
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.secondary} />
 
       <LinearGradient
-        colors={['#f0fdf4', '#dcfce7', '#bbf7d0']}
+        colors={[COLORS.secondary, '#e0ece0']}
         style={styles.backgroundGradient}
       >
         <ScrollView
@@ -120,7 +137,7 @@ const HomeScreen: React.FC = () => {
               style={styles.notificationButton}
               onPress={() => handleNavigation('Notifications')}
             >
-              <Ionicons name="notifications" size={24} color="#059669" />
+              <Ionicons name="notifications" size={24} color={COLORS.primary} />
               <View style={styles.notificationBadge}>
                 <Text style={styles.badgeText}>3</Text>
               </View>
@@ -130,7 +147,7 @@ const HomeScreen: React.FC = () => {
           {/* Weather Card */}
           <View style={styles.weatherCard}>
             <LinearGradient
-              colors={['#059669', '#10b981']}
+              colors={[COLORS.primary, COLORS.lightPrimary]}
               style={styles.weatherGradient}
             >
               <View style={styles.weatherHeader}>
@@ -154,6 +171,41 @@ const HomeScreen: React.FC = () => {
             </LinearGradient>
           </View>
 
+          {/* AI Assistant & Scan Crop - Quick Access */}
+          <View style={styles.quickAccessRow}>
+            <TouchableOpacity
+              style={styles.quickAccessCard}
+              onPress={() => handleNavigation('AIChatScreen')}
+            >
+              <LinearGradient
+                colors={[COLORS.primary, COLORS.lightPrimary]}
+                style={styles.quickAccessGradient}
+              >
+                <View style={styles.quickAccessIcon}>
+                  <Ionicons name="chatbubble-ellipses" size={28} color={COLORS.white} />
+                </View>
+                <Text style={styles.quickAccessTitle}>Chat with AI</Text>
+                <Text style={styles.quickAccessSubtitle}>Get instant farming advice</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickAccessCard}
+              onPress={() => handleNavigation('CropScanScreen')}
+            >
+              <LinearGradient
+                colors={['#f59e0b', '#fbbf24']}
+                style={styles.quickAccessGradient}
+              >
+                <View style={styles.quickAccessIcon}>
+                  <Ionicons name="camera" size={28} color={COLORS.white} />
+                </View>
+                <Text style={styles.quickAccessTitle}>Scan Crop</Text>
+                <Text style={styles.quickAccessSubtitle}>Detect diseases</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
           {/* Quick Actions */}
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
@@ -161,7 +213,7 @@ const HomeScreen: React.FC = () => {
               style={styles.actionCard}
               onPress={() => handleNavigation('CropManagementScreen')}
             >
-              <View style={styles.actionIcon}>
+              <View style={[styles.actionIcon, { backgroundColor: '#e8f5e8' }]}>
                 <Text style={styles.actionEmoji}>🌱</Text>
               </View>
               <Text style={styles.actionText}>Crop Management</Text>
@@ -171,7 +223,7 @@ const HomeScreen: React.FC = () => {
               style={styles.actionCard}
               onPress={() => handleNavigation('DiseaseAlertsScreen')}
             >
-              <View style={styles.actionIcon}>
+              <View style={[styles.actionIcon, { backgroundColor: '#fef3c7' }]}>
                 <Text style={styles.actionEmoji}>🦠</Text>
               </View>
               <Text style={styles.actionText}>Disease Alerts</Text>
@@ -181,7 +233,7 @@ const HomeScreen: React.FC = () => {
               style={styles.actionCard}
               onPress={() => handleNavigation('Weather')}
             >
-              <View style={styles.actionIcon}>
+              <View style={[styles.actionIcon, { backgroundColor: '#dbeafe' }]}>
                 <Text style={styles.actionEmoji}>🌤️</Text>
               </View>
               <Text style={styles.actionText}>Weather</Text>
@@ -191,7 +243,7 @@ const HomeScreen: React.FC = () => {
               style={styles.actionCard}
               onPress={() => handleNavigation('AITipsScreen')}
             >
-              <View style={styles.actionIcon}>
+              <View style={[styles.actionIcon, { backgroundColor: '#f3e8ff' }]}>
                 <Text style={styles.actionEmoji}>🤖</Text>
               </View>
               <Text style={styles.actionText}>AI Tips</Text>
@@ -199,28 +251,33 @@ const HomeScreen: React.FC = () => {
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => handleNavigation('CommunityScreen')}
+              onPress={() => handleNavigation('MarketScreen')}
             >
-              <View style={styles.actionIcon}>
-                <Text style={styles.actionEmoji}>👥</Text>
+              <View style={[styles.actionIcon, { backgroundColor: '#fce7f3' }]}>
+                <Text style={styles.actionEmoji}>💰</Text>
               </View>
-              <Text style={styles.actionText}>Community</Text>
+              <Text style={styles.actionText}>Market Prices</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => handleNavigation('ProfileScreen')}
+              onPress={() => handleNavigation('CommunityScreen')}
             >
-              <View style={styles.actionIcon}>
-                <Text style={styles.actionEmoji}>👤</Text>
+              <View style={[styles.actionIcon, { backgroundColor: '#ecfdf5' }]}>
+                <Text style={styles.actionEmoji}>👥</Text>
               </View>
-              <Text style={styles.actionText}>Profile</Text>
+              <Text style={styles.actionText}>Community</Text>
             </TouchableOpacity>
           </View>
 
           {/* My Crops */}
-          <Text style={styles.sectionTitle}>My Crops</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Crops</Text>
+            <TouchableOpacity onPress={() => handleNavigation('CropManagementScreen')}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cropsScroll}>
             <View style={styles.cropsContainer}>
               {crops.map((crop) => (
                 <TouchableOpacity
@@ -228,17 +285,27 @@ const HomeScreen: React.FC = () => {
                   style={styles.cropCard}
                   onPress={() => handleNavigation('CropDetailScreen')}
                 >
-                  <Text style={styles.cropIcon}>{crop.icon}</Text>
+                  <View style={styles.cropHeader}>
+                    <Text style={styles.cropIcon}>{crop.icon}</Text>
+                    <View style={[styles.healthIndicator, { backgroundColor: getHealthColor(crop.health) }]} />
+                  </View>
                   <Text style={styles.cropName}>{crop.name}</Text>
                   <Text style={styles.cropStage}>{crop.stage}</Text>
-                  <View style={[styles.healthIndicator, { backgroundColor: getHealthColor(crop.health) }]} />
+                  <View style={styles.cropProgress}>
+                    <View style={[styles.progressBar, { width: '75%', backgroundColor: getHealthColor(crop.health) }]} />
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
 
           {/* Recent Notifications */}
-          <Text style={styles.sectionTitle}>Recent Updates</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Updates</Text>
+            <TouchableOpacity onPress={() => handleNavigation('Notifications')}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.notificationsContainer}>
             {notifications.map((notification) => (
               <TouchableOpacity
@@ -250,7 +317,7 @@ const HomeScreen: React.FC = () => {
                   <Ionicons
                     name={notification.type === 'warning' ? 'warning' : notification.type === 'success' ? 'checkmark' : 'information'}
                     size={20}
-                    color="white"
+                    color={COLORS.white}
                   />
                 </View>
                 <View style={styles.notificationContent}>
@@ -258,27 +325,13 @@ const HomeScreen: React.FC = () => {
                   <Text style={styles.notificationMessage}>{notification.message}</Text>
                   <Text style={styles.notificationTime}>{notification.time}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+                <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* AI Assistant Button */}
-          <TouchableOpacity
-            style={styles.aiAssistantButton}
-            onPress={() => handleNavigation('AIChatScreen')}
-          >
-            <LinearGradient
-              colors={['#059669', '#10b981', '#34d399']}
-              style={styles.aiButtonGradient}
-
-            >
-              <Ionicons name="chatbubble-ellipses" size={24} color="white" />
-              <Text style={styles.aiButtonText}>Ask KrishiGPT</Text>
-              <Text style={styles.aiEmoji}>🤖</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
@@ -288,7 +341,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.secondary,
   },
   backgroundGradient: {
     flex: 1,
@@ -306,12 +359,12 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 16,
-    color: '#6b7280',
+    color: COLORS.gray,
     fontWeight: '500',
   },
   userNameText: {
     fontSize: 24,
-    color: '#065f46',
+    color: COLORS.primary,
     fontWeight: 'bold',
   },
   notificationButton: {
@@ -329,7 +382,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 5,
-    backgroundColor: '#ef4444',
+    backgroundColor: COLORS.error,
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -337,15 +390,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 12,
     fontWeight: 'bold',
   },
   weatherCard: {
-    marginBottom: 30,
+    marginBottom: 20,
     borderRadius: 20,
     elevation: 6,
-    shadowColor: '#059669',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -361,7 +414,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   weatherTitle: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -376,7 +429,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weatherValue: {
-    color: 'white',
+    color: COLORS.white,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
@@ -385,23 +438,76 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 14,
   },
+  // Quick Access Row
+  quickAccessRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 25,
+    gap: 15,
+  },
+  quickAccessCard: {
+    flex: 1,
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  quickAccessGradient: {
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  quickAccessIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  quickAccessTitle: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  quickAccessSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  // Section Styles
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   sectionTitle: {
     fontSize: 20,
-    color: '#065f46',
+    color: COLORS.primary,
     fontWeight: 'bold',
-    marginBottom: 15,
-    marginTop: 10,
   },
+  seeAllText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  // Quick Actions
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 25,
   },
   actionCard: {
     width: (width - 60) / 3,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 15,
     alignItems: 'center',
     marginBottom: 15,
@@ -415,7 +521,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#dcfce7',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -425,56 +530,72 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  // Crops Section
+  cropsScroll: {
+    marginBottom: 25,
   },
   cropsContainer: {
     flexDirection: 'row',
     paddingBottom: 10,
   },
   cropCard: {
-    width: 120,
+    width: 140,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 15,
-    alignItems: 'center',
     marginRight: 15,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    position: 'relative',
+  },
+  cropHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
   },
   cropIcon: {
     fontSize: 32,
-    marginBottom: 8,
   },
   cropName: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   cropStage: {
     fontSize: 12,
-    color: '#6b7280',
+    color: COLORS.gray,
+    marginBottom: 8,
+  },
+  cropProgress: {
+    height: 4,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 2,
   },
   healthIndicator: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
     width: 12,
     height: 12,
     borderRadius: 6,
   },
+  // Notifications
   notificationsContainer: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   notificationCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -498,45 +619,21 @@ const styles = StyleSheet.create({
   },
   notificationTitle: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   notificationMessage: {
     fontSize: 14,
-    color: '#6b7280',
+    color: COLORS.gray,
     marginBottom: 4,
   },
   notificationTime: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: COLORS.lightGray,
   },
-  aiAssistantButton: {
-    borderRadius: 20,
-    elevation: 8,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    marginTop: 10,
-  },
-  aiButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 20,
-  },
-  aiButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
-    marginRight: 8,
-  },
-  aiEmoji: {
-    fontSize: 20,
+  bottomSpacing: {
+    height: 20,
   },
 });
 

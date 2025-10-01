@@ -18,6 +18,21 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
+// Color constants
+const COLORS = {
+  primary: '#066040',
+  secondary: '#cde4cd',
+  white: '#ffffff',
+  black: '#000000',
+  gray: '#6b7280',
+  lightGray: '#9ca3af',
+  darkGray: '#374151',
+  error: '#ef4444',
+  success: '#10b981',
+  lightPrimary: '#08855f',
+  darkPrimary: '#054d34',
+};
+
 interface PersonalInfo {
   fullName: string;
   phoneNumber: string;
@@ -87,6 +102,13 @@ const FarmerRegistration: React.FC = () => {
   const [showFarmModal, setShowFarmModal] = useState(false);
   const [currentFarmIndex, setCurrentFarmIndex] = useState(0);
   const [currentCropIndex, setCurrentCropIndex] = useState(0);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [showSoilModal, setShowSoilModal] = useState(false);
+  const [showIrrigationModal, setShowIrrigationModal] = useState(false);
+  const [showCropSelectionModal, setShowCropSelectionModal] = useState(false);
+  const [showExperienceModal, setShowExperienceModal] = useState(false);
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
   // Form Data States
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
@@ -309,11 +331,49 @@ const FarmerRegistration: React.FC = () => {
     </View>
   );
 
-  const renderDropdown = (value: string, options: string[], onSelect: (value: string) => void, placeholder: string) => (
-    <View style={styles.dropdownContainer}>
-      <Text style={styles.dropdownValue}>{value || placeholder}</Text>
-      {/* In a real app, this would open a picker modal */}
-    </View>
+  const renderModal = (visible: boolean, onClose: () => void, title: string, options: string[], onSelect: (value: string) => void, selectedValue: string) => (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color={COLORS.darkGray} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalOptions}>
+            {options.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.modalOption,
+                  selectedValue === option && styles.modalOptionSelected
+                ]}
+                onPress={() => {
+                  onSelect(option);
+                  onClose();
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  selectedValue === option && styles.modalOptionTextSelected
+                ]}>
+                  {option}
+                </Text>
+                {selectedValue === option && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 
   const renderStep1 = () => (
@@ -328,7 +388,7 @@ const FarmerRegistration: React.FC = () => {
           value={personalInfo.fullName}
           onChangeText={(value) => updatePersonalInfo('fullName', value)}
           placeholder="Enter your full name"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={COLORS.lightGray}
         />
       </View>
 
@@ -340,18 +400,30 @@ const FarmerRegistration: React.FC = () => {
             value={personalInfo.phoneNumber}
             onChangeText={(value) => updatePersonalInfo('phoneNumber', value)}
             placeholder="+91 9876543210"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
             keyboardType="phone-pad"
           />
         </View>
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
           <Text style={styles.inputLabel}>Gender</Text>
-          <TouchableOpacity style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={styles.dropdownContainer}
+            onPress={() => setShowGenderModal(true)}
+          >
             <Text style={styles.dropdownValue}>{personalInfo.gender || 'Select Gender'}</Text>
-            <Ionicons name="chevron-down" size={20} color="#6b7280" />
+            <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         </View>
       </View>
+
+      {renderModal(
+        showGenderModal,
+        () => setShowGenderModal(false),
+        'Select Gender',
+        genderOptions,
+        (value) => updatePersonalInfo('gender', value),
+        personalInfo.gender
+      )}
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Email</Text>
@@ -360,7 +432,7 @@ const FarmerRegistration: React.FC = () => {
           value={personalInfo.email}
           onChangeText={(value) => updatePersonalInfo('email', value)}
           placeholder="your.email@example.com"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={COLORS.lightGray}
           keyboardType="email-address"
         />
       </View>
@@ -372,7 +444,7 @@ const FarmerRegistration: React.FC = () => {
           value={personalInfo.address}
           onChangeText={(value) => updatePersonalInfo('address', value)}
           placeholder="House/Plot number, Street, Area"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={COLORS.lightGray}
           multiline
           numberOfLines={3}
         />
@@ -386,7 +458,7 @@ const FarmerRegistration: React.FC = () => {
             value={personalInfo.village}
             onChangeText={(value) => updatePersonalInfo('village', value)}
             placeholder="Village name"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
           />
         </View>
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
@@ -396,7 +468,7 @@ const FarmerRegistration: React.FC = () => {
             value={personalInfo.pincode}
             onChangeText={(value) => updatePersonalInfo('pincode', value)}
             placeholder="123456"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
             keyboardType="numeric"
           />
         </View>
@@ -410,7 +482,7 @@ const FarmerRegistration: React.FC = () => {
             value={personalInfo.district}
             onChangeText={(value) => updatePersonalInfo('district', value)}
             placeholder="District name"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
           />
         </View>
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
@@ -420,7 +492,7 @@ const FarmerRegistration: React.FC = () => {
             value={personalInfo.state}
             onChangeText={(value) => updatePersonalInfo('state', value)}
             placeholder="State name"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
           />
         </View>
       </View>
@@ -441,7 +513,7 @@ const FarmerRegistration: React.FC = () => {
                 onPress={() => removeFarm(farm.id)}
                 style={styles.removeFarmButton}
               >
-                <Ionicons name="trash-outline" size={20} color="#ef4444" />
+                <Ionicons name="trash-outline" size={20} color={COLORS.error} />
               </TouchableOpacity>
             )}
           </View>
@@ -453,7 +525,7 @@ const FarmerRegistration: React.FC = () => {
               value={farm.farmName}
               onChangeText={(value) => updateFarmInfo(farmIndex, 'farmName', value)}
               placeholder="e.g., North Field, Main Farm"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={COLORS.lightGray}
             />
           </View>
 
@@ -465,26 +537,50 @@ const FarmerRegistration: React.FC = () => {
                 value={farm.totalArea}
                 onChangeText={(value) => updateFarmInfo(farmIndex, 'totalArea', value)}
                 placeholder="e.g., 3.5"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={COLORS.lightGray}
                 keyboardType="numeric"
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
               <Text style={styles.inputLabel}>Soil Type</Text>
-              <TouchableOpacity style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={styles.dropdownContainer}
+                onPress={() => setShowSoilModal(true)}
+              >
                 <Text style={styles.dropdownValue}>{farm.soilType || 'Select Soil Type'}</Text>
-                <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
               </TouchableOpacity>
             </View>
           </View>
 
+          {renderModal(
+            showSoilModal,
+            () => setShowSoilModal(false),
+            'Select Soil Type',
+            soilTypes,
+            (value) => updateFarmInfo(currentFarmIndex, 'soilType', value),
+            farms[currentFarmIndex]?.soilType || ''
+          )}
+
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Irrigation Type</Text>
-            <TouchableOpacity style={styles.dropdownContainer}>
+            <TouchableOpacity
+              style={styles.dropdownContainer}
+              onPress={() => setShowIrrigationModal(true)}
+            >
               <Text style={styles.dropdownValue}>{farm.irrigationType || 'Select Irrigation Type'}</Text>
-              <Ionicons name="chevron-down" size={20} color="#6b7280" />
+              <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
             </TouchableOpacity>
           </View>
+
+          {renderModal(
+            showIrrigationModal,
+            () => setShowIrrigationModal(false),
+            'Select Irrigation Type',
+            irrigationTypes,
+            (value) => updateFarmInfo(currentFarmIndex, 'irrigationType', value),
+            farms[currentFarmIndex]?.irrigationType || ''
+          )}
 
           {/* Crops Section */}
           <View style={styles.cropsSection}>
@@ -494,7 +590,7 @@ const FarmerRegistration: React.FC = () => {
                 onPress={() => addCropToFarm(farmIndex)}
                 style={styles.addCropButton}
               >
-                <Ionicons name="add" size={20} color="#059669" />
+                <Ionicons name="add" size={20} color={COLORS.primary} />
                 <Text style={styles.addCropButtonText}>Add Crop</Text>
               </TouchableOpacity>
             </View>
@@ -507,16 +603,23 @@ const FarmerRegistration: React.FC = () => {
                     onPress={() => removeCropFromFarm(farmIndex, crop.id)}
                     style={styles.removeCropButton}
                   >
-                    <Ionicons name="close" size={16} color="#ef4444" />
+                    <Ionicons name="close" size={16} color={COLORS.error} />
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.inputRow}>
                   <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
                     <Text style={styles.inputLabel}>Crop Name *</Text>
-                    <TouchableOpacity style={styles.dropdownContainer}>
+                    <TouchableOpacity
+                      style={styles.dropdownContainer}
+                      onPress={() => {
+                        setCurrentFarmIndex(farmIndex);
+                        setCurrentCropIndex(cropIndex);
+                        setShowCropSelectionModal(true);
+                      }}
+                    >
                       <Text style={styles.dropdownValue}>{crop.cropName || 'Select Crop'}</Text>
-                      <Ionicons name="chevron-down" size={16} color="#6b7280" />
+                      <Ionicons name="chevron-down" size={16} color={COLORS.gray} />
                     </TouchableOpacity>
                   </View>
                   <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
@@ -526,11 +629,20 @@ const FarmerRegistration: React.FC = () => {
                       value={crop.areaAllocated}
                       onChangeText={(value) => updateCropInfo(farmIndex, cropIndex, 'areaAllocated', value)}
                       placeholder="1.5"
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={COLORS.lightGray}
                       keyboardType="numeric"
                     />
                   </View>
                 </View>
+
+                {renderModal(
+                  showCropSelectionModal,
+                  () => setShowCropSelectionModal(false),
+                  'Select Crop',
+                  cropOptions,
+                  (value) => updateCropInfo(currentFarmIndex, currentCropIndex, 'cropName', value),
+                  farms[currentFarmIndex]?.crops[currentCropIndex]?.cropName || ''
+                )}
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Variety</Text>
@@ -539,7 +651,7 @@ const FarmerRegistration: React.FC = () => {
                     value={crop.variety}
                     onChangeText={(value) => updateCropInfo(farmIndex, cropIndex, 'variety', value)}
                     placeholder="e.g., Basmati, HD-2967"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={COLORS.lightGray}
                   />
                 </View>
 
@@ -548,14 +660,14 @@ const FarmerRegistration: React.FC = () => {
                     <Text style={styles.inputLabel}>Sowing Date</Text>
                     <TouchableOpacity style={styles.dateInput}>
                       <Text style={styles.dateValue}>{crop.sowingDate || 'Select Date'}</Text>
-                      <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                      <Ionicons name="calendar-outline" size={16} color={COLORS.gray} />
                     </TouchableOpacity>
                   </View>
                   <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
                     <Text style={styles.inputLabel}>Expected Harvest</Text>
                     <TouchableOpacity style={styles.dateInput}>
                       <Text style={styles.dateValue}>{crop.expectedHarvest || 'Select Date'}</Text>
-                      <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                      <Ionicons name="calendar-outline" size={16} color={COLORS.gray} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -587,7 +699,7 @@ const FarmerRegistration: React.FC = () => {
 
             {farm.crops.length === 0 && (
               <View style={styles.noCropsContainer}>
-                <Ionicons name="leaf-outline" size={48} color="#d1d5db" />
+                <Ionicons name="leaf-outline" size={48} color={COLORS.lightGray} />
                 <Text style={styles.noCropsText}>No crops added yet</Text>
                 <Text style={styles.noCropsSubtext}>Add crops to continue</Text>
               </View>
@@ -598,10 +710,10 @@ const FarmerRegistration: React.FC = () => {
 
       <TouchableOpacity onPress={addNewFarm} style={styles.addFarmButton}>
         <LinearGradient
-          colors={['#dcfce7', '#bbf7d0']}
+          colors={['#e8f5e8', '#d4ecd4']}
           style={styles.addFarmGradient}
         >
-          <Ionicons name="add" size={24} color="#059669" />
+          <Ionicons name="add" size={24} color={COLORS.primary} />
           <Text style={styles.addFarmText}>Add Another Farm</Text>
         </LinearGradient>
       </TouchableOpacity>
@@ -817,28 +929,55 @@ const FarmerRegistration: React.FC = () => {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Farming Experience *</Text>
-        <TouchableOpacity style={styles.dropdownContainer}>
+        <TouchableOpacity
+          style={styles.dropdownContainer}
+          onPress={() => setShowExperienceModal(true)}
+        >
           <Text style={styles.dropdownValue}>{additionalInfo.experience || 'Select Experience Level'}</Text>
-          <Ionicons name="chevron-down" size={20} color="#6b7280" />
+          <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
         </TouchableOpacity>
       </View>
+
+      {renderModal(
+        showExperienceModal,
+        () => setShowExperienceModal(false),
+        'Select Experience',
+        experienceOptions,
+        (value) => updateAdditionalInfo('experience', value),
+        additionalInfo.experience
+      )}
 
       <View style={styles.inputRow}>
         <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
           <Text style={styles.inputLabel}>Primary Income Source *</Text>
-          <TouchableOpacity style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={styles.dropdownContainer}
+            onPress={() => setShowIncomeModal(true)}
+          >
             <Text style={styles.dropdownValue}>{additionalInfo.primaryIncome || 'Select Income'}</Text>
-            <Ionicons name="chevron-down" size={20} color="#6b7280" />
+            <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         </View>
         <View style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}>
           <Text style={styles.inputLabel}>Annual Income Range</Text>
-          <TouchableOpacity style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={styles.dropdownContainer}
+            onPress={() => setShowIncomeModal(true)}
+          >
             <Text style={styles.dropdownValue}>{additionalInfo.annualIncome || 'Select Range'}</Text>
-            <Ionicons name="chevron-down" size={20} color="#6b7280" />
+            <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         </View>
       </View>
+
+      {renderModal(
+        showIncomeModal,
+        () => setShowIncomeModal(false),
+        'Select Income Range',
+        incomeRanges,
+        (value) => updateAdditionalInfo('annualIncome', value),
+        additionalInfo.annualIncome
+      )}
 
       <View style={styles.bankingSection}>
         <Text style={styles.sectionTitle}>Banking Information</Text>
@@ -849,7 +988,7 @@ const FarmerRegistration: React.FC = () => {
             value={additionalInfo.bankAccount}
             onChangeText={(value) => updateAdditionalInfo('bankAccount', value)}
             placeholder="Enter your bank account number"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
             keyboardType="numeric"
             secureTextEntry
           />
@@ -861,7 +1000,7 @@ const FarmerRegistration: React.FC = () => {
             value={additionalInfo.ifscCode}
             onChangeText={(value) => updateAdditionalInfo('ifscCode', value)}
             placeholder="e.g., SBIN0001234"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={COLORS.lightGray}
             autoCapitalize="characters"
           />
         </View>
@@ -896,7 +1035,7 @@ const FarmerRegistration: React.FC = () => {
                 value={additionalInfo.kisanCardNumber}
                 onChangeText={(value) => updateAdditionalInfo('kisanCardNumber', value)}
                 placeholder="Enter card number"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={COLORS.lightGray}
                 keyboardType="numeric"
               />
             </View>
@@ -929,7 +1068,7 @@ const FarmerRegistration: React.FC = () => {
                 value={additionalInfo.insuranceProvider}
                 onChangeText={(value) => updateAdditionalInfo('insuranceProvider', value)}
                 placeholder="e.g., ICICI Lombard, HDFC Ergo"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={COLORS.lightGray}
               />
             </View>
           )}
@@ -941,11 +1080,23 @@ const FarmerRegistration: React.FC = () => {
 
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Preferred Language</Text>
-          <TouchableOpacity style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={styles.dropdownContainer}
+            onPress={() => setShowLanguageModal(true)}
+          >
             <Text style={styles.dropdownValue}>{additionalInfo.preferredLanguage}</Text>
-            <Ionicons name="chevron-down" size={20} color="#6b7280" />
+            <Ionicons name="chevron-down" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         </View>
+
+        {renderModal(
+          showLanguageModal,
+          () => setShowLanguageModal(false),
+          'Select Language',
+          languages,
+          (value) => updateAdditionalInfo('preferredLanguage', value),
+          additionalInfo.preferredLanguage
+        )}
 
         <View style={styles.notificationSettings}>
           <View style={styles.notificationItem}>
@@ -993,10 +1144,10 @@ const FarmerRegistration: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.secondary} />
 
       <LinearGradient
-        colors={['#f0fdf4', '#dcfce7', '#bbf7d0']}
+        colors={[COLORS.secondary, '#e0ece0']}
         style={styles.backgroundGradient}
       >
         {/* Header */}
@@ -1005,7 +1156,7 @@ const FarmerRegistration: React.FC = () => {
             onPress={() => currentStep > 1 ? prevStep() : navigation.goBack()}
             style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color="#059669" />
+            <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
           </TouchableOpacity>
 
           <View style={styles.headerInfo}>
@@ -1014,7 +1165,7 @@ const FarmerRegistration: React.FC = () => {
           </View>
 
           <TouchableOpacity style={styles.helpButton}>
-            <Ionicons name="help-circle-outline" size={24} color="#059669" />
+            <Ionicons name="help-circle-outline" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
 
@@ -1043,7 +1194,7 @@ const FarmerRegistration: React.FC = () => {
 
           <TouchableOpacity onPress={nextStep} style={styles.nextButton}>
             <LinearGradient
-              colors={['#059669', '#10b981']}
+              colors={[COLORS.primary, COLORS.lightPrimary]}
               style={styles.nextButtonGradient}
             >
               <Text style={styles.nextButtonText}>
@@ -1052,7 +1203,7 @@ const FarmerRegistration: React.FC = () => {
               <Ionicons
                 name={currentStep === 4 ? "checkmark" : "arrow-forward"}
                 size={20}
-                color="white"
+                color={COLORS.white}
               />
             </LinearGradient>
           </TouchableOpacity>
@@ -1065,7 +1216,7 @@ const FarmerRegistration: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.secondary,
   },
   backgroundGradient: {
     flex: 1,
@@ -1085,7 +1236,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.secondary,
     borderRadius: 20,
   },
   headerInfo: {
@@ -1094,17 +1245,17 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#059669',
+    color: COLORS.primary,
     marginTop: 2,
   },
   helpButton: {
     padding: 8,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: COLORS.secondary,
     borderRadius: 20,
   },
   stepIndicator: {
@@ -1127,23 +1278,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepCircleActive: {
-    backgroundColor: '#10b981',
+    backgroundColor: COLORS.lightPrimary,
   },
   stepCircleCurrent: {
-    backgroundColor: '#059669',
+    backgroundColor: COLORS.primary,
     elevation: 3,
-    shadowColor: '#059669',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   stepNumber: {
     fontSize: 16,
-    color: '#6b7280',
+    color: COLORS.gray,
     fontWeight: 'bold',
   },
   stepNumberActive: {
-    color: 'white',
+    color: COLORS.white,
   },
   stepLine: {
     width: 60,
@@ -1152,7 +1303,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   stepLineActive: {
-    backgroundColor: '#10b981',
+    backgroundColor: COLORS.lightPrimary,
   },
   formContainer: {
     flex: 1,
@@ -1166,13 +1317,13 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontSize: 24,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
     marginBottom: 5,
   },
   stepSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: COLORS.gray,
     marginBottom: 25,
   },
   inputGroup: {
@@ -1180,16 +1331,16 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: '600',
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     elevation: 1,
@@ -1207,7 +1358,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dropdownContainer: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 15,
     borderWidth: 1,
@@ -1223,7 +1374,7 @@ const styles = StyleSheet.create({
   },
   dropdownValue: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
   },
   farmCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -1244,7 +1395,7 @@ const styles = StyleSheet.create({
   },
   farmTitle: {
     fontSize: 18,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
   },
   removeFarmButton: {
@@ -1266,20 +1417,20 @@ const styles = StyleSheet.create({
   },
   cropsTitle: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
   },
   addCropButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#e8f5e8',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
   addCropButtonText: {
     fontSize: 14,
-    color: '#059669',
+    color: COLORS.primary,
     fontWeight: '600',
     marginLeft: 5,
   },
@@ -1299,7 +1450,7 @@ const styles = StyleSheet.create({
   },
   cropCardTitle: {
     fontSize: 14,
-    color: '#6b7280',
+    color: COLORS.gray,
     fontWeight: '600',
   },
   removeCropButton: {
@@ -1308,7 +1459,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   dateInput: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 12,
     padding: 15,
     borderWidth: 1,
@@ -1319,7 +1470,7 @@ const styles = StyleSheet.create({
   },
   dateValue: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
   },
   purposeContainer: {
     marginTop: 10,
@@ -1330,7 +1481,7 @@ const styles = StyleSheet.create({
   },
   purposeButton: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     borderRadius: 8,
@@ -1338,16 +1489,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   purposeButtonActive: {
-    backgroundColor: '#059669',
-    borderColor: '#059669',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   purposeButtonText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: COLORS.gray,
     fontWeight: '500',
   },
   purposeButtonTextActive: {
-    color: 'white',
+    color: COLORS.white,
   },
   noCropsContainer: {
     alignItems: 'center',
@@ -1355,7 +1506,7 @@ const styles = StyleSheet.create({
   },
   noCropsText: {
     fontSize: 16,
-    color: '#9ca3af',
+    color: COLORS.lightGray,
     fontWeight: '500',
     marginTop: 15,
   },
@@ -1375,12 +1526,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: '#059669',
+    borderColor: COLORS.primary,
     borderStyle: 'dashed',
   },
   addFarmText: {
     fontSize: 16,
-    color: '#059669',
+    color: COLORS.primary,
     fontWeight: 'bold',
     marginLeft: 10,
   },
@@ -1418,13 +1569,13 @@ const styles = StyleSheet.create({
   },
   livestockName: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   livestockDescription: {
     fontSize: 12,
-    color: '#6b7280',
+    color: COLORS.gray,
   },
   livestockToggle: {
     backgroundColor: '#e5e7eb',
@@ -1433,15 +1584,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   livestockToggleActive: {
-    backgroundColor: '#059669',
+    backgroundColor: COLORS.primary,
   },
   livestockToggleText: {
     fontSize: 12,
-    color: '#6b7280',
+    color: COLORS.gray,
     fontWeight: 'bold',
   },
   livestockToggleTextActive: {
-    color: 'white',
+    color: COLORS.white,
   },
   livestockCountContainer: {
     marginTop: 15,
@@ -1451,21 +1602,21 @@ const styles = StyleSheet.create({
   },
   countLabel: {
     fontSize: 14,
-    color: '#6b7280',
+    color: COLORS.gray,
     marginBottom: 5,
   },
   countInput: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
   sectionTitle: {
     fontSize: 18,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
     marginBottom: 15,
   },
@@ -1502,13 +1653,13 @@ const styles = StyleSheet.create({
   },
   schemeName: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: 'bold',
     marginBottom: 2,
   },
   schemeDescription: {
     fontSize: 14,
-    color: '#6b7280',
+    color: COLORS.gray,
   },
   schemeToggle: {
     backgroundColor: '#e5e7eb',
@@ -1517,15 +1668,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   schemeToggleActive: {
-    backgroundColor: '#059669',
+    backgroundColor: COLORS.primary,
   },
   schemeToggleText: {
     fontSize: 12,
-    color: '#6b7280',
+    color: COLORS.gray,
     fontWeight: 'bold',
   },
   schemeToggleTextActive: {
-    color: 'white',
+    color: COLORS.white,
   },
   schemeDetails: {
     marginTop: 15,
@@ -1556,13 +1707,13 @@ const styles = StyleSheet.create({
   },
   notificationName: {
     fontSize: 16,
-    color: '#374151',
+    color: COLORS.darkGray,
     fontWeight: '600',
     marginBottom: 2,
   },
   notificationDescription: {
     fontSize: 12,
-    color: '#6b7280',
+    color: COLORS.gray,
   },
   notificationToggle: {
     width: 50,
@@ -1573,13 +1724,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   notificationToggleActive: {
-    backgroundColor: '#059669',
+    backgroundColor: COLORS.primary,
   },
   toggleSlider: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1602,9 +1753,9 @@ const styles = StyleSheet.create({
   },
   prevButton: {
     flex: 0.3,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.white,
     borderWidth: 1.5,
-    borderColor: '#059669',
+    borderColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
@@ -1613,14 +1764,14 @@ const styles = StyleSheet.create({
   },
   prevButtonText: {
     fontSize: 16,
-    color: '#059669',
+    color: COLORS.primary,
     fontWeight: 'bold',
   },
   nextButton: {
     flex: 0.7,
     borderRadius: 12,
     elevation: 3,
-    shadowColor: '#059669',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -1634,9 +1785,59 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     fontSize: 16,
-    color: 'white',
+    color: COLORS.white,
     fontWeight: 'bold',
     marginRight: 10,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  modalTitle: {
+    fontSize: 18,
+    color: COLORS.darkGray,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalOptions: {
+    maxHeight: 400,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  modalOptionSelected: {
+    backgroundColor: '#f0f9f0',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: COLORS.darkGray,
+  },
+  modalOptionTextSelected: {
+    color: COLORS.primary,
+    fontWeight: '600',
   },
 });
 

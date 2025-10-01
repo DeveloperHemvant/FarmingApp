@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 // Bilingual text content
 const translations = {
   en: {
@@ -78,7 +79,6 @@ export default function KrishiGPTLogin() {
   const validate = () => {
     let valid = true;
 
-    // Mobile validation
     if (mobile.length < 10) {
       setErrorMobile(t.errors.mobile);
       valid = false;
@@ -86,7 +86,6 @@ export default function KrishiGPTLogin() {
       setErrorMobile('');
     }
 
-    // Password validation
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
       setErrorPassword(t.errors.password);
@@ -98,7 +97,6 @@ export default function KrishiGPTLogin() {
     return valid;
   };
 
-  // Login API call
   const handleLogin = async () => {
     if (!validate()) return;
 
@@ -112,11 +110,8 @@ export default function KrishiGPTLogin() {
         password,
       });
 
-      // Assuming API returns { success: true, token: '...' }
       if (response.data.success) {
         Alert.alert('Success', 'Login successful!');
-
-        // Navigate to Home screen
         navigation.navigate('Home');
       } else {
         Alert.alert('Error', response.data.message || 'Login failed');
@@ -130,24 +125,23 @@ export default function KrishiGPTLogin() {
   };
 
   const handleForgotPassword = () => {
-    // Navigate to Forgot Password screen
     navigation.navigate('ForgotPassword');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f0fdf4" />
-      <LinearGradient colors={['#f0fdf4', '#dcfce7', '#bbf7d0']} style={styles.backgroundGradient}>
+      <StatusBar barStyle="light-content" backgroundColor="#066040" />
+      <LinearGradient colors={['#cde4cd', '#cde4cd']} style={styles.backgroundGradient}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.languageToggle} onPress={handleLanguageToggle} activeOpacity={0.7}>
-              <Ionicons name="language" size={20} color="#059669" />
+              <Ionicons name="language" size={20} color="#066040" />
               <Text style={styles.languageText}>{language === 'en' ? 'हिं' : 'EN'}</Text>
             </TouchableOpacity>
 
             <View style={styles.logoContainer}>
-              <LinearGradient colors={['#059669', '#10b981']} style={styles.logoGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <LinearGradient colors={['#066040', '#044a30']} style={styles.logoGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                 <Text style={styles.logoEmoji}>🌱</Text>
                 <Ionicons name="flash" size={24} color="white" />
               </LinearGradient>
@@ -162,13 +156,13 @@ export default function KrishiGPTLogin() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t.mobileNumber}</Text>
               <View style={styles.inputContainer}>
-                <Ionicons name="call" size={20} color="#059669" style={styles.inputIcon} />
+                <Ionicons name="call" size={20} color="#066040" style={styles.inputIcon} />
                 <TextInput
                   style={styles.textInput}
                   value={mobile}
                   onChangeText={setMobile}
                   placeholder={t.mobilePlaceholder}
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor="#666"
                   keyboardType="phone-pad"
                   maxLength={13}
                 />
@@ -179,13 +173,13 @@ export default function KrishiGPTLogin() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t.password}</Text>
               <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed" size={20} color="#059669" style={styles.inputIcon} />
+                <Ionicons name="lock-closed" size={20} color="#066040" style={styles.inputIcon} />
                 <TextInput
                   style={styles.textInput}
                   value={password}
                   onChangeText={setPassword}
                   placeholder={t.passwordPlaceholder}
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor="#666"
                   secureTextEntry
                 />
               </View>
@@ -193,28 +187,27 @@ export default function KrishiGPTLogin() {
             </View>
 
             <TouchableOpacity style={{ alignSelf: 'flex-end', marginBottom: 20 }} onPress={handleForgotPassword} activeOpacity={0.7}>
-              <Text style={{ color: '#059669', fontWeight: '600' }}>{t.forgotPassword}</Text>
+              <Text style={{ color: '#066040', fontWeight: '600' }}>{t.forgotPassword}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.sendOtpButton} onPress={handleLogin} activeOpacity={0.8}>
-              <LinearGradient colors={['#059669', '#10b981', '#34d399']} style={styles.buttonGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+              <LinearGradient colors={['#066040', '#044a30']} style={styles.buttonGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                 <Text style={styles.buttonText}>{loading ? 'Loading...' : t.sendLogin}</Text>
                 <Ionicons name="arrow-forward" size={20} color="white" />
               </LinearGradient>
             </TouchableOpacity>
+
             <View style={{ alignItems: 'center', marginVertical: 15 }}>
               <Text style={{ fontSize: 14, color: '#374151' }}>
                 Don’t have an account?
               </Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('Register')}
-                activeOpacity={0.7}
-              >
-                <Text style={{ color: '#059669', fontWeight: '700', fontSize: 16 }}>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
+                <Text style={{ color: '#066040', fontWeight: '700', fontSize: 16 }}>
                   Register as Farmer
                 </Text>
               </TouchableOpacity>
             </View>
+
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 {t.footerText} <Text style={styles.linkText}>{t.terms}</Text> {t.and} <Text style={styles.linkText}>{t.privacy}</Text>
@@ -228,21 +221,40 @@ export default function KrishiGPTLogin() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0fdf4' },
+  container: { flex: 1, backgroundColor: '#cde4cd' },
   backgroundGradient: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20 },
   header: { alignItems: 'center', paddingTop: 40, paddingBottom: 30 },
-  languageToggle: { position: 'absolute', top: 10, right: 0, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.8)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  languageText: { marginLeft: 4, color: '#059669', fontWeight: '600', fontSize: 14 },
+  languageToggle: {
+    position: 'absolute',
+    top: 10,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20
+  },
+  languageText: { marginLeft: 4, color: '#066040', fontWeight: '600', fontSize: 14 },
   logoContainer: { marginBottom: 20 },
   logoGradient: { width: 80, height: 80, borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   logoEmoji: { fontSize: 28, marginRight: 4 },
-  appName: { fontSize: 42, fontWeight: 'bold', color: '#065f46', marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 18, color: '#047857', textAlign: 'center', fontWeight: '500' },
+  appName: { fontSize: 42, fontWeight: 'bold', color: '#066040', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 18, color: '#044a30', textAlign: 'center', fontWeight: '500' },
   formContainer: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 25, padding: 24 },
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 8 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 15, borderWidth: 2, borderColor: '#d1fae5', paddingHorizontal: 16, paddingVertical: 4 },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#cde4cd',
+    paddingHorizontal: 16,
+    paddingVertical: 4
+  },
   inputIcon: { marginRight: 12 },
   textInput: { flex: 1, fontSize: 16, color: '#374151', paddingVertical: 12 },
   errorText: { color: 'red', fontSize: 12, marginTop: 4 },
@@ -250,6 +262,6 @@ const styles = StyleSheet.create({
   buttonGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 18 },
   buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold', marginRight: 8 },
   footer: { alignItems: 'center' },
-  footerText: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
-  linkText: { color: '#059669', fontWeight: '600' },
+  footerText: { fontSize: 14, color: '#374151', textAlign: 'center', lineHeight: 20 },
+  linkText: { color: '#066040', fontWeight: '600' },
 });
