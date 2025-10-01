@@ -5,6 +5,6 @@
   "minify": false,
   "urlRandomness": "YeUTK1E",
   "https": false,
-  "scheme": "exp+my-expo-app",
+  "scheme": null,
   "devClient": false
 }
